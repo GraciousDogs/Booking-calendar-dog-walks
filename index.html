@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dog Walk Booking Calendar</title>
+</head>
+<body>
+    <h2>Book Your Dog's Walk</h2>
+    <form id="bookingForm">
+        <label for="name">Your Name:</label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="dogName">Dog's Name:</label>
+        <input type="text" id="dogName" name="dogName" required><br><br>
+
+        <label for="service">Service:</label>
+        <select id="service" name="service" required>
+            <option value="1-hour walk">1-hour walk</option>
+            <option value="30-min visit">30-min visit</option>
+        </select><br><br>
+
+        <label>Select Dates:</label><br>
+        <div id="calendar"></div>
+        
+        <input type="hidden" id="selectedDates" name="selectedDates">
+        <button type="submit">Book</button>
+    </form>
+
+    <script>
+        const calendarDiv = document.getElementById("calendar");
+        const selectedDatesInput = document.getElementById("selectedDates");
+        const selectedDates = new Set();
+
+        function createCalendar(monthOffset) {
+            const today = new Date();
+            const currentMonth = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+            const monthName = currentMonth.toLocaleString('default', { month: 'long' });
+            
+            const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+
+            const monthDiv = document.createElement("div");
+            monthDiv.innerHTML = `<h3>${monthName} ${currentMonth.getFullYear()}</h3>`;
+            const datesDiv = document.createElement("div");
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                const dateString = date.toISOString().split('T')[0];
+
+                const dayButton = document.createElement("button");
+                dayButton.type = "button";
+                dayButton.textContent = day;
+                dayButton.style.margin = "3px";
+                dayButton.onclick = () => {
+                    if (selectedDates.has(dateString)) {
+                        selectedDates.delete(dateString);
+                        dayButton.style.backgroundColor = "";
+                    } else {
+                        selectedDates.add(dateString);
+                        dayButton.style.backgroundColor = "lightgreen";
+                    }
+                    selectedDatesInput.value = Array.from(selectedDates).join(",");
+                };
+                datesDiv.appendChild(dayButton);
+            }
+            monthDiv.appendChild(datesDiv);
+            calendarDiv.appendChild(monthDiv);
+        }
+
+        createCalendar(0);  // Current month
+        createCalendar(1);  // Next month
+
+        document.getElementById("bookingForm").onsubmit = async function (event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            await fetch("YOUR_GOOGLE_SCRIPT_URL", {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+
+            alert("Booking submitted! Thank you.");
+            event.target.reset();
+            selectedDates.clear();
+            Array.from(calendarDiv.querySelectorAll("button")).forEach(btn => btn.style.backgroundColor = "");
+        };
+    </script>
+</body>
+</html>
